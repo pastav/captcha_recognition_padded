@@ -25,7 +25,9 @@
 
     tail -f out.txt
 
-5.  Classify the captchas:
+    This script will give the model in h5 and tflite format. The conversion happens automatically.
+
+6.  Classify the captchas:
 
     You can use classify_tflite.py or classify_h5.py to classify the images.
 
@@ -34,3 +36,5 @@
     python3 classify_tflite.py --model-name converted_model --captcha-dir finalcapwithtime --output out_tflite.csv --symbols symbol.txt --shortname srivastp
 
     shortname is required as it is printed in the header of the csv file.
+
+    These scripts automatically saves a CSV file which is suitable for submission to submitty
