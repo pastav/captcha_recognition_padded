@@ -57,6 +57,7 @@ def main():
 
     with open(args.output, 'w', encoding='UTF8', newline='') as output_file:
         writer = csv.writer(output_file)
+        #adding shortname to csv
         writer.writerow([args.shortname])
         # Load the TFLite model in TFLite Interpreter
         modelname= args.model_name+'.tflite'
@@ -79,18 +80,23 @@ def main():
             #converting to greyscale
             gray_image = raw_data.convert('L')
             image = np.array(gray_image)/255.0
+            image = np.expand_dims(image, axis=2)
+            #convert to float 32 as pi is 32 bit system
             image = np.float32(image)
             (h, w, c) = image.shape
             image = image.reshape([-1, h, w, c])
             interpreter.set_tensor(input_details[0]['index'], image)
             interpreter.invoke()
+            #the tensor indexes were found out by comparing to the test dataset
             tensors_ind=[3,5,0,4,2,1]
+            #getting the captcha label
             captcha_name=""
             for i in range(0, 6):
                 captcha_name+=decode(captcha_symbols, interpreter.get_tensor(output_details[tensors_ind[i]]['index']))
             # output_data=decode(captcha_symbols, interpreter.get_tensor(output_details[0]['index']))
             # print(output_data)
             # print(captcha_name)
+            #printing to csv
             writer.writerow([x,captcha_name.replace(',','')])
             print('Classified ' + x + " as "+captcha_name.replace(',',''))
     print("--- %s seconds --- taken to classify" % (time.time() - start_time))
