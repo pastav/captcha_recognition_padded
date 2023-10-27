@@ -241,7 +241,7 @@ def main():
         plt.title('Validation Character Accuracy')
         plt.ylabel('Validation Accuracy')
         plt.xlabel('Epoch')
-        plt.legend(['Train', 'Validation'], loc='lower right')
+        plt.legend(['val_char_1_accuracy', 'val_char_2_accuracy', 'val_char_3_accuracy','val_char_4_accuracy','val_char_5_accuracy','val_char_6_accuracy'], loc='lower right')
 
         plt.tight_layout()
 

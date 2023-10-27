@@ -30,7 +30,6 @@ for index, row in df.iterrows():
     while not success:
         try:
             wget.download(entireurl, out=location)
-            # print("downloaded=",row[0])
             success = True
             print("Success with ",row[0])
         except Exception as e:
