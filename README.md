@@ -13,7 +13,7 @@
 
     python3 generate_1_to_length.py --width 128 --height 64 --length 6 --symbols symbols.txt --count 20000 --output-dir training_data
 
-    This will generate captchas from length 1-6 and count 20000*6 (number of captchas)*(length of captcha)
+    This will generate captchas from length 1-6 and count 20000 times 6 (number of captchas) * (length of captcha)
 
 4.  Train the model:
 
