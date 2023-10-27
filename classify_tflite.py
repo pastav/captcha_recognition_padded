@@ -22,7 +22,6 @@ def main():
     start_time = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument('--model-name', help='Model name to use for classification', type=str)
-    parser.add_argument('--length', help='Length of captchas in characters', type=int)
     parser.add_argument('--captcha-dir', help='Where to read the captchas to break', type=str)
     parser.add_argument('--output', help='File where the classifications should be saved', type=str)
     parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
@@ -31,10 +30,6 @@ def main():
 
     if args.model_name is None:
         print("Please specify the model to use")
-        exit(1)
-
-    if args.length is None:
-        print("Please specify the length to use")
         exit(1)
 
     if args.captcha_dir is None:
@@ -79,9 +74,11 @@ def main():
         for x in captchas_files:
             # load image and preprocess it
             raw_data = Image.open(os.path.join(args.captcha_dir, x))
-            if raw_data.mode != 'RGB':
-                raw_data = raw_data.convert('RGB')
-            image = np.array(raw_data)/255.0
+            # if raw_data.mode != 'RGB':
+            #     raw_data = raw_data.convert('RGB')
+            #converting to greyscale
+            gray_image = raw_data.convert('L')
+            image = np.array(gray_image)/255.0
             image = np.float32(image)
             (h, w, c) = image.shape
             image = image.reshape([-1, h, w, c])
@@ -89,7 +86,7 @@ def main():
             interpreter.invoke()
             tensors_ind=[3,5,0,4,2,1]
             captcha_name=""
-            for i in range(0, args.length):
+            for i in range(0, 6):
                 captcha_name+=decode(captcha_symbols, interpreter.get_tensor(output_details[tensors_ind[i]]['index']))
             # output_data=decode(captcha_symbols, interpreter.get_tensor(output_details[0]['index']))
             # print(output_data)

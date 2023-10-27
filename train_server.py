@@ -17,11 +17,12 @@ import time
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
-
+#GPU configs
 config = ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
 
+#convert the model generated to tflite
 def convert_tflite(modelname,modelh5):
     try:
         converter = tf.lite.TFLiteConverter.from_keras_model(modelh5)
@@ -70,7 +71,7 @@ class ImageSequence(keras.utils.Sequence):
         return int(numpy.floor(self.count / self.batch_size))
 
     def __getitem__(self, idx):
-        X = numpy.zeros((self.batch_size, self.captcha_height, self.captcha_width, 3), dtype=numpy.float32)
+        X = numpy.zeros((self.batch_size, self.captcha_height, self.captcha_width, 1), dtype=numpy.float32)
         y = [numpy.zeros((self.batch_size, len(self.captcha_symbols)), dtype=numpy.uint8) for i in range(self.captcha_length)]
 
         for i in range(self.batch_size):
@@ -84,15 +85,22 @@ class ImageSequence(keras.utils.Sequence):
             self.used_files.append(self.files.pop(random_image_label))
 
             # We have to scale the input pixel values to the range [0, 1] for
-            # Keras so we divide by 255 since the image is 8-bit RGB
+            # Keras so we divide by 255 since the image is 8-bit
             raw_data = cv2.imread(os.path.join(self.directory_name, random_image_file))
-            rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
-            processed_data = numpy.array(rgb_data) / 255.0
+            #converting to greyscale
+            grey_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2GRAY)
+            processed_data = numpy.array(grey_data) / 255.0
+            #adding a third dimension to convert to shape (64,128,1)
+            processed_data = numpy.expand_dims(processed_data, axis=2)
             X[i] = processed_data
 
             # We have a little hack here - we save captchas as TEXT_num.png if there is more than one captcha with the text "TEXT"
             # So the real label should have the "_num" stripped out.
             random_image_label = random_image_label.split('_')[0]
+
+            #Here we are doing the most important step
+            #I'm adding a padding character ',' to match the length given in the command
+            #The model will be trained with this label, where it will determine the empty space as the padded character (HYPOTHESIS)
             while (len(random_image_label)<self.captcha_length):
                 random_image_label = random_image_label+","
             # print(random_image_label)
@@ -159,9 +167,7 @@ def main():
         captcha_symbols = captcha_symbols+','
         print(captcha_symbols)
 
-    # physical_devices = tf.config.experimental.list_physical_devices('GPU')
-    # assert len(physical_devices) > 0, "No GPU available!"
-    # tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    #Finding the GPU if present and using it to train the model.
     device = '/device:CPU:0'
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
     if len(physical_devices) > 0: # "GPU available!"
@@ -172,7 +178,8 @@ def main():
     with tf.device(device):
         # with tf.device('/device:XLA_CPU:0'):
         print(f'training with {device}')
-        model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3))
+        #model bein created with the shape (64,128,1)
+        model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 1))
 
         if args.input_model is not None:
             model.load_weights(args.input_model)
@@ -186,7 +193,8 @@ def main():
         training_data = ImageSequence(args.train_dataset, args.batch_size, args.length, captcha_symbols, args.width, args.height)
         validation_data = ImageSequence(args.validate_dataset, args.batch_size, args.length, captcha_symbols, args.width, args.height)
 
-        callbacks = [keras.callbacks.EarlyStopping(patience=3),
+        #stopping if the model has not improved in 2 epochs
+        callbacks = [keras.callbacks.EarlyStopping(patience=2),
                      # keras.callbacks.CSVLogger('log.csv'),
                      keras.callbacks.ModelCheckpoint(args.output_model_name+'.h5', save_best_only=False)]
 
@@ -200,14 +208,19 @@ def main():
                                 epochs=args.epochs,
                                 callbacks=callbacks,
                                 use_multiprocessing=True)
-        except:
+        except Exception as e:
+            print(e)
             print('Error caught, saving current weights as ' + args.output_model_name+'_resume.h5')
             model.save_weights(args.output_model_name+'_resume.h5')
-        # print(history.history.keys())
-        # Plot and save the training history (loss and accuracy)
-        convert_tflite(args.output_model_name,model)
-        plt.figure(figsize=(12, 4))
+            exit()
+        
 
+        #Converting the model to TFlite for Pi
+        convert_tflite(args.output_model_name,model)
+        # print(history.history.keys())
+        plt.figure(figsize=(12, 4))
+        
+        # Plot and save the training history (loss and accuracy)
         # Plot training & validation loss values
         plt.subplot(1, 2, 1)
         plt.plot(history.history['loss'])
@@ -235,6 +248,7 @@ def main():
         # Save the plots to a file
         plt.savefig('training_plots.png')
 
+    #printing the time it took to train the model
     print("--- %s seconds --- taken to train" % (time.time() - start_time))
 
         # Show the plots (optional)
