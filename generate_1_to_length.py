@@ -78,7 +78,7 @@ def main():
             image = numpy.array(captcha_generator.generate_image(random_str))
             cv2.imwrite(image_path, image)
             #printing the total progress of the generation
-            if (n%1000==0):
+            if (n%100==0):
                 timetaken.append(round(time.time(),2))
                 count.append(n)
                 print("Done with: {}%".format(round((n/(args.count*args.length))*100)))

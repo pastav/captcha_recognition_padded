@@ -1,15 +1,20 @@
 import wget
 import pandas as pd
 import time
+import os
+path = "captchas"
+if not os.path.exists(path):
+   os.makedirs(path)
+
 start_time = time.time()
 
-filenames= "https://cs7ns1.scss.tcd.ie/?shortname=srivastp"
-locationnames= "/users/pgrad/srivastp/project2"
+shortname = "srivastp"
+filenames= "https://cs7ns1.scss.tcd.ie/?shortname="+shortname
 retries = 1
 success = False
 while not success:
     try:
-        wget.download(filenames, out=locationnames)
+        wget.download(filenames)
         # print("downloaded=",row[0])
         success = True
         print("Success with the filenames csv")
@@ -18,9 +23,7 @@ while not success:
         retries += 1
 
 url = "https://cs7ns1.scss.tcd.ie"
-shortname = "srivastp"
-location= "/users/pgrad/srivastp/project2/finalcapwithtime"
-df = pd.read_csv("srivastp-challenge-filenames.csv",header=None)
+df = pd.read_csv(shortname+"-challenge-filenames.csv",header=None)
 
 for index, row in df.iterrows():
     retries = 1
@@ -29,7 +32,7 @@ for index, row in df.iterrows():
     entireurl = url+"/?shortname="+shortname+"&myfilename="+row[0]
     while not success:
         try:
-            wget.download(entireurl, out=location)
+            wget.download(entireurl, out =path)
             success = True
             print("Success with ",row[0])
         except Exception as e:
