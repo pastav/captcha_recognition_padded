@@ -30,6 +30,7 @@
     You can use classify_tflite.py or classify_h5.py to classify the images.
 
     python3 classify_h5.py --model-name best_bw --captcha-dir finalcapwithtime --output output_bw.csv --symbols symbols.txt --shortname srivastp
-    python classify_tflite.py --model-name converted_model --captcha-dir finalcapwithtime --output out_tflite.csv --symbols symbol.txt --shortname srivastp
+
+    python3 classify_tflite.py --model-name converted_model --captcha-dir finalcapwithtime --output out_tflite.csv --symbols symbol.txt --shortname srivastp
 
     shortname is required as it is printed in the header of the csv file.
